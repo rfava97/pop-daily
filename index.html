@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pop Daily</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pop Daily">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#15131f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);color-scheme:light}
+body{margin:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+/* Layout: single-column phone app, session timer as the hero, bottom tab bar */
+:root{
+  --bg:#ecebf2; --surface:#ffffff; --surface-2:#dedce8; --fg:#1b1830; --muted:#5d5873;
+  --accent:#d94e17; --accent-fg:#ffffff; --mustard:#b8860b; --line:#c9c6d8;
+  --good:#2f7d4f; --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15131f; --surface:#211e30; --surface-2:#2d2940; --fg:#f1eee6; --muted:#a7a2bd;
+  --accent:#ff7a3d; --accent-fg:#1b1210; --mustard:#f2c14e; --line:#3a3552; --good:#6fcf97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15131f; --surface:#211e30; --surface-2:#2d2940; --fg:#f1eee6; --muted:#a7a2bd;
+  --accent:#ff7a3d; --accent-fg:#1b1210; --mustard:#f2c14e; --line:#3a3552; --good:#6fcf97; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:560px;margin:0 auto;padding-block:20px 110px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-family:var(--display);font-weight:400;font-size:28px;letter-spacing:.02em;line-height:1}
+h2{font-size:18px;font-weight:700}
+h3{font-size:15px;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:600;color:var(--muted)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.streak{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right}
+.streak b{font-size:22px;color:var(--accent);display:block;line-height:1}
+.card{background:var(--surface);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--fg);font:600 14px var(--body);padding:8px 10px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 0 var(--line)}
+button{font-family:var(--body)}
+.btn{border:0;border-radius:12px;padding:14px 18px;font:700 16px var(--body);cursor:pointer;background:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:var(--surface-2);color:var(--fg)}
+.btn.small{padding:8px 12px;font-size:13px;border-radius:9px}
+.btn:focus-visible,.seg button:focus-visible,.chip:focus-visible,.tab:focus-visible,a:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.plan{display:flex;flex-direction:column}
+.step{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:0}
+.step .min{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--accent)}
+.step .what{min-width:0}
+.step .what small{display:block;color:var(--muted);font-size:13px}
+.song{display:flex;gap:12px;align-items:center}
+.disc{width:46px;height:46px;border-radius:50%;flex:none;background:radial-gradient(circle,var(--accent) 0 18%,var(--fg) 19% 22%,var(--surface-2) 23% 100%);border:2px solid var(--fg)}
+.song .meta{min-width:0;flex:1}
+.song .meta b{display:block}
+.links{display:flex;gap:6px;flex-wrap:wrap}
+.links a{font-size:13px;font-weight:600;color:var(--fg);text-decoration:none;background:var(--surface-2);padding:6px 10px;border-radius:8px}
+.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--mustard);color:var(--bg)}
+/* Player */
+.player{background:var(--fg);color:var(--bg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.player .label{color:inherit;opacity:.7}
+.pname{font-family:var(--display);font-size:22px;line-height:1.1}
+.ptimer{font-family:var(--mono);font-weight:700;font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.prompt{font-family:var(--display);font-size:20px;line-height:1.15}
+.pdesc{font-size:16px;line-height:1.5;opacity:.9;max-width:62ch;min-height:4.5em}
+.pmusic{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--bg) 14%,transparent)}
+.pmusic .label{color:inherit;opacity:.7}
+.player .links a{background:color-mix(in srgb,var(--bg) 20%,transparent);color:var(--bg)}
+.bpm{font-family:var(--mono);min-width:72px;text-align:center}
+.bpm b{font-size:18px}
+.bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--bg) 25%,transparent);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+.beatrow{display:flex;gap:8px;align-items:center}
+.beat{width:14px;height:14px;border-radius:3px;background:color-mix(in srgb,var(--bg) 25%,transparent)}
+.beat.on{background:var(--accent)}
+.pctl{display:flex;gap:8px;flex-wrap:wrap}
+.pctl .btn{flex:1}
+.player .btn.ghost{background:color-mix(in srgb,var(--bg) 18%,transparent);color:var(--bg)}
+.hitflash{animation:hit .5s steps(3) 1}
+@keyframes hit{0%{transform:translateX(-4px)}33%{transform:translateX(3px)}66%{transform:translateX(-1px)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.hitflash{animation:none}}
+/* Library */
+.fam{display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line);background:transparent;color:var(--fg);border-radius:999px;padding:7px 12px;font:500 14px var(--body);cursor:pointer}
+.chip[data-state="1"]{background:var(--surface-2);border-color:var(--fg)}
+.chip[data-state="2"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:1.5px solid var(--fg)}
+.legend .l1::before{background:var(--surface-2)}
+.legend .l2::before{background:var(--accent);border-color:var(--accent)}
+.note{font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:10px;padding:10px 12px}
+/* Rate */
+.rate{display:flex;flex-direction:column;gap:6px}
+.dots{display:flex;gap:6px}
+.dots button{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:transparent;color:var(--fg);font:700 15px var(--mono);cursor:pointer}
+.dots button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+textarea,input[type=text]{width:100%;font:15px var(--body);color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px}
+/* Diary */
+.cal{display:grid;grid-template-columns:repeat(14,1fr);gap:4px}
+.cal i{aspect-ratio:1;border-radius:4px;background:var(--surface-2);max-width:100%}
+.cal i.done{background:var(--accent)}
+.hist{display:flex;flex-direction:column}
+.hist div{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.hist div:first-child{border-top:0}
+.chart svg{width:100%;height:auto;display:block}
+/* Tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:5}
+.tabs nav{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tab{border:0;background:transparent;color:var(--muted);font:600 12px var(--body);padding:8px 4px;border-radius:10px;cursor:pointer}
+.tab[aria-current="true"]{color:var(--fg);background:var(--surface-2)}
+.songlist{display:flex;flex-direction:column}
+.songlist .song{padding:10px 0;border-top:1px solid var(--line)}
+.songlist .song:first-child{border-top:0}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="top">
+    <div><p class="label">Allenamento popping</p><h1>Pop Daily</h1></div>
+    <div class="streak" id="streak"></div>
+  </header>
+
+  <!-- OGGI -->
+  <section id="v-oggi" class="view" style="display:flex;flex-direction:column;gap:18px">
+    <div class="card" id="setup">
+      <div class="row" style="justify-content:space-between"><h2>Sessione di oggi</h2><button class="btn small ghost" id="reroll">Rigenera</button></div>
+      <div class="seg" role="group" aria-label="Durata">
+        <button data-dur="10">10 min</button><button data-dur="15">15 min</button><button data-dur="20">20 min</button>
+      </div>
+      <div class="row" style="justify-content:space-between"><span class="muted">Metronomo</span>
+        <div class="row"><button class="btn small ghost" id="bpmDown" aria-label="Rallenta">−5</button><span class="bpm"><b id="bpmv">95</b> BPM</span><button class="btn small ghost" id="bpmUp" aria-label="Accelera">+5</button></div></div>
+      <div class="plan" id="plan"></div>
+    </div>
+    <div class="card" id="songcard"></div>
+    <div class="player" id="player" hidden>
+      <div class="row" style="justify-content:space-between"><span class="label" id="pstep"></span><span class="label" id="pbpm"></span></div>
+      <div class="pname" id="pname"></div>
+      <div class="ptimer" id="ptimer">0:00</div>
+      <div class="bar"><i id="pbar"></i></div>
+      <div class="beatrow" id="beats"><span class="beat"></span><span class="beat"></span><span class="beat"></span><span class="beat"></span></div>
+      <p class="prompt" id="pprompt"></p>
+      <p class="pdesc" id="pdesc"></p>
+      <div class="pmusic" id="pmusic" hidden></div>
+      <p class="label" id="pnext"></p>
+      <div class="pctl">
+        <button class="btn ghost" id="bPause">Pausa</button>
+        <button class="btn ghost" id="bNext">Salta</button>
+        <button class="btn ghost" id="bStop">Termina</button>
+      </div>
+    </div>
+    <button class="btn" id="bStart">Inizia sessione</button>
+    <div class="card" id="rateCard" hidden></div>
+  </section>
+
+  <!-- FONDAMENTALI -->
+  <section id="v-fond" class="view" hidden style="flex-direction:column;gap:18px">
+    <div class="card">
+      <h2>I tuoi fondamentali</h2>
+      <p class="muted">L'app allena solo quello che hai visto a lezione. Tocca per cambiare stato.</p>
+      <div class="legend"><span class="l0">Non ancora visto</span><span class="l1">Visto a lezione</span><span class="l2">Ultima lezione</span></div>
+      <p class="note" id="exampleNote">Selezione di esempio: aggiornala con quello che avete fatto davvero.</p>
+    </div>
+    <div class="card" id="lib"></div>
+    <button class="btn ghost" id="newLesson">Nuova lezione: azzera "ultima lezione"</button>
+  </section>
+
+  <!-- MUSICA -->
+  <section id="v-mus" class="view" hidden style="flex-direction:column;gap:18px">
+    <div class="card">
+      <h2>Brani</h2>
+      <p class="muted">L'app preferisce i brani che hai ballato meno: improvvisare su musica che non conosci allena il freestyle più di quella che sai a memoria.</p>
+      <div class="seg" role="group" aria-label="Ritmo"><button data-tempo="tutti">Tutti</button><button data-tempo="lento">Lento</button><button data-tempo="medio">Medio</button><button data-tempo="veloce">Veloce</button></div>
+    </div>
+    <div class="card"><div class="songlist" id="songlist"></div></div>
+    <div class="card">
+      <h3>Aggiungi un brano</h3>
+      <input type="text" id="addTitle" placeholder="Artista – Titolo">
+      <div class="seg" role="group" aria-label="Ritmo nuovo brano"><button data-addt="lento">Lento</button><button data-addt="medio" aria-pressed="true">Medio</button><button data-addt="veloce">Veloce</button></div>
+      <button class="btn small" id="addSong">Aggiungi</button>
+    </div>
+  </section>
+
+  <!-- DIARIO -->
+  <section id="v-diario" class="view" hidden style="flex-direction:column;gap:18px">
+    <div class="card">
+      <h2>Ultimi 14 giorni</h2>
+      <div class="cal" id="cal"></div>
+    </div>
+    <div class="card chart">
+      <h2>Sicurezza nel freestyle</h2>
+      <div id="confChart"></div>
+    </div>
+    <div class="card"><h2>Sessioni</h2><div class="hist" id="hist"></div></div>
+    <div class="card">
+      <h2>Backup</h2>
+      <p class="muted">I dati restano solo su questo telefono. Esporta un backup ogni tanto (su File o iCloud Drive) e reimportalo se cambi telefono.</p>
+      <div class="row"><button class="btn small" id="bExport">Esporta backup</button><button class="btn small ghost" id="bImport">Importa backup</button></div>
+      <input type="file" id="fImport" accept="application/json,.json" hidden>
+      <p class="muted" id="bkMsg" style="font-size:13px"></p>
+    </div>
+  </section>
+</div>
+
+<div class="tabs"><nav>
+  <button class="tab" data-tab="oggi" aria-current="true">Oggi</button>
+  <button class="tab" data-tab="fond">Fondamentali</button>
+  <button class="tab" data-tab="mus">Musica</button>
+  <button class="tab" data-tab="diario">Diario</button>
+</nav></div>
+
+<script>
+const FAM = {
+  hit:"Hit e base", stop:"Stop e scatti", wave:"Wave e flussi", geo:"Geometrie",
+  boog:"Boogaloo e rotazioni", glide:"Glide e illusioni", char:"Personaggi e animazione", perf:"Struttura e performance"
+};
+const FUND = [
+ {id:"hit",fam:"hit",n:"Hit / pop",cue:"Contrai e rilascia su ogni battito: braccia, poi gambe, poi petto, poi collo. Rilascio pulito, non restare contratto."},
+ {id:"dhit",fam:"hit",n:"Double hit",cue:"Due hit per battito, poi alterna 1 e 2. Il secondo hit deve essere netto quanto il primo."},
+ {id:"fresno",fam:"hit",n:"Fresno",cue:"Peso da un lato all'altro con hit sul passo e sul braccio. Controlla che le spalle restino basse."},
+ {id:"twist",fam:"hit",n:"Twist-o-flex",cue:"Sequenza lenta prima, poi a tempo. Ogni posizione ferma per un battito intero."},
+ {id:"walkout",fam:"hit",n:"Walk-out",cue:"Cammina avanti e indietro con hit su ogni passo. Il busto resta stabile."},
+ {id:"neck",fam:"hit",n:"Neck-o-flex",cue:"Isola il collo: il petto non deve muoversi. Davanti allo specchio."},
+ {id:"dime",fam:"stop",n:"Dime stop",cue:"Movimento fluido che si ferma di colpo sul battito, senza rimbalzo."},
+ {id:"tick",fam:"stop",n:"Ticking",cue:"Spezza un movimento in scatti piccoli e uguali, 4 o 8 per battuta."},
+ {id:"strobe",fam:"stop",n:"Strobing",cue:"Movimento come sotto luce stroboscopica: tanti fermo-immagine, stessa distanza tra uno e l'altro."},
+ {id:"robot",fam:"stop",n:"Robot",cue:"Partenze e arrivi netti, velocità costante in mezzo. Lo sguardo segue il movimento."},
+ {id:"awave",fam:"wave",n:"Arm wave",cue:"L'onda passa una articolazione alla volta: dita, polso, gomito, spalla, e ritorno."},
+ {id:"bwave",fam:"wave",n:"Body wave",cue:"Testa, petto, pancia, anche, ginocchia. Lentissimo prima, la velocità viene dopo."},
+ {id:"fwave",fam:"wave",n:"Finger wave",cue:"Onda tra le dita delle due mani a contatto. Pulizia più che velocità."},
+ {id:"slow",fam:"wave",n:"Slow motion",cue:"Un gesto quotidiano al 10% della velocità, senza scatti né fermate."},
+ {id:"tut",fam:"geo",n:"Tutting",cue:"Angoli a 90° netti. Ogni forma ferma per un battito, poi passaggio pulito alla successiva."},
+ {id:"ftut",fam:"geo",n:"Finger tutting",cue:"Forme con le dita a 90°. Tieni le mani all'altezza degli occhi."},
+ {id:"kingtut",fam:"geo",n:"King Tut",cue:"Posizioni egizie di braccia e mani, transizioni a hit."},
+ {id:"rolls",fam:"boog",n:"Boogaloo rolls",cue:"Cerchi continui di anche, ginocchia, petto, testa. Il cerchio deve essere rotondo, non ovale."},
+ {id:"rot",fam:"boog",n:"Rotazioni e twist",cue:"Ruota le articolazioni una alla volta, il resto del corpo fermo."},
+ {id:"crazy",fam:"boog",n:"Crazy legs",cue:"Ginocchia che si aprono e chiudono a tempo, peso sulle punte."},
+ {id:"back",fam:"glide",n:"Backslide",cue:"Tallone su, peso sul piede in punta, l'altro scivola. Lento e silenzioso."},
+ {id:"side",fam:"glide",n:"Sideglide",cue:"Punta e tallone alternati per scivolare di lato. Il busto non deve salire."},
+ {id:"float",fam:"glide",n:"Floating e circle glide",cue:"Fluido e continuo, nessun cambio di velocità visibile."},
+ {id:"wip",fam:"glide",n:"Gliding sul posto",cue:"Cammina restando fermo: il passo deve sembrare reale."},
+ {id:"anim",fam:"char",n:"Animation",cue:"Movimento a fotogrammi come un cartone. Scegli un ritmo di scatti e mantienilo."},
+ {id:"puppet",fam:"char",n:"Puppet",cue:"Fili immaginari: la parte tirata si muove, il resto pende."},
+ {id:"scare",fam:"char",n:"Scarecrow",cue:"Corpo rigido e appeso, arti che cadono e si rialzano a scatti."},
+ {id:"toy",fam:"char",n:"Toyman",cue:"Giocattolo a molla: movimenti piccoli, ripetitivi, che rallentano quando la carica finisce."},
+ {id:"music",fam:"perf",n:"Musicalità",cue:"Ascolta 8 battute senza ballare, poi hit solo su rullante e poi solo sulla melodia."},
+ {id:"trans",fam:"perf",n:"Transizioni tra stili",cue:"Passa da uno stile all'altro ogni 8 tempi senza fermarti."},
+ {id:"levels",fam:"perf",n:"Cambi di livello e direzione",cue:"Alto, medio, basso; poi fronte, lato, schiena."},
+ {id:"face",fam:"perf",n:"Sguardo e faccia",cue:"Lo sguardo guida il movimento. Prova la stessa sequenza con tre espressioni diverse."}
+];
+const VARIATIONS = [
+ {t:"Metà velocità, poi piena",d:"8 tempi a metà velocità: ogni movimento dura il doppio, ma la contrazione deve restare netta. Poi 8 tempi a velocità normale, e alterna. Se a metà velocità il movimento si sporca, il problema è lì."},
+ {t:"Solo sui tempi 2 e 4",d:"Conta 1-2-3-4 e fai il fondamentale solo sul 2 e sul 4, dove nel funk cade il rullante. Sull'1 e sul 3 resti fermo, in tensione. Allena lo stop e l'orecchio per il backbeat."},
+ {t:"Quattro direzioni",d:"8 tempi rivolto al fronte, 8 di lato, 8 di spalle, 8 dall'altro lato. Il fondamentale deve leggersi da ogni angolazione: se di profilo sparisce, è troppo piccolo."},
+ {t:"Tre livelli",d:"8 tempi in piedi, 8 con le ginocchia piegate a metà, 8 il più basso possibile. Cambia livello senza perdere il tempo e senza che il movimento si deformi."},
+ {t:"Doppio e mezzo tempo",d:"8 tempi raddoppiando (due movimenti per battito), 8 dimezzando (uno ogni due battiti). Il mezzo tempo deve sembrare pesante, il doppio tempo pulito e non frettoloso."},
+ {t:"Di spalle allo specchio",d:"8 tempi guardandoti, poi girati e continua senza specchio. Concentrati su come lo senti nel corpo: sul palco e in un cerchio lo specchio non c'è."},
+ {t:"Lo sguardo guida",d:"Guarda il punto in cui andrà il movimento, poi muoviti. Lo sguardo arriva sempre un attimo prima del corpo. Il fondamentale diventa intenzionale invece che meccanico."},
+ {t:"Una parte, poi due",d:"8 tempi con una sola parte del corpo, ad esempio solo il braccio destro. Poi aggiungine una seconda che fa lo stesso movimento o il contrario. Allena isolamento e coordinazione."},
+ {t:"Sempre in movimento",d:"Ogni 4 tempi fai un passo in una direzione nuova mentre esegui il fondamentale. Ti prepara a usarlo nel freestyle, dove raramente stai fermo sul posto."},
+ {t:"Tre espressioni",d:"Stessa esecuzione con tre facce, 8 tempi ciascuna: neutra, sicura, giocosa. Cambia come arriva il movimento a chi guarda e ti abitua a non ballare con la faccia vuota."}
+];
+const PROMPTS = [
+ {t:"Solo braccia",d:"Gambe e busto fermi come una statua. Tutto passa da spalle, braccia e mani: hit, onde, angoli. Cerca più varietà possibile con poche parti del corpo."},
+ {t:"Solo gambe e anche",d:"Braccia lungo i fianchi. Lavora su passi, ginocchia, anche, glide. Scopri quante cose sai fare dalla vita in giù."},
+ {t:"Tre livelli",d:"Ogni 8 tempi cambi altezza: in piedi, ginocchia piegate, quasi a terra. Il cambio cade sul tempo, non a caso."},
+ {t:"Rullante e slow motion",d:"Su ogni colpo di rullante un hit secco. Tra un colpo e l'altro ti muovi al rallentatore. Il contrasto tra veloce e lento è uno degli strumenti più forti del popping."},
+ {t:"Energia al 30%",d:"Movimenti piccoli e trattenuti, hit leggeri ma precisi. Serve a capire che non devi spingere sempre al massimo per essere interessante."},
+ {t:"Energia al 100%",d:"Tutto grande: braccia lunghe, hit forti, usa tutto lo spazio. Per un minuto niente timidezza. Se ti senti un po' ridicolo, stai facendo bene."},
+ {t:"Niente hit",d:"Vietato contrarre. Solo onde, rotazioni, slow motion, glide. Ti costringe a trovare un altro modo di stare sulla musica."},
+ {t:"Robot guasto",d:"Sei un robot con un difetto: movimenti meccanici che ogni tanto si inceppano, si ripetono o si bloccano a metà. Usa ticking e dime stop come guasti."},
+ {t:"Sott'acqua",d:"Ogni movimento incontra resistenza, come nell'acqua. Niente scatti: tutto rallenta e galleggia. Lavora su controllo e fluidità."},
+ {t:"Quadrato di un metro",d:"Immagina un quadrato di un metro attorno ai piedi e non uscirne. Crea varietà senza spostarti, con livelli, direzioni e parti del corpo."},
+ {t:"Attraversa la stanza",d:"Mai fermo: vai da una parete all'altra, cambia direzione, torna indietro. Walk-out, glide, passi. Ti abitua a ballare viaggiando."},
+ {t:"Ripeti e modifica",d:"Scegli una mossa e falla 4 volte di fila, cambiando ogni volta una cosa: velocità, livello, direzione o parte del corpo. È così che nascono le variazioni personali."},
+ {t:"Freeze",d:"Ogni tanto ti blocchi del tutto per 2 tempi, come un fermo-immagine, poi riparti. Scegli tu quando. Gli stop danno respiro e mostrano sicurezza."},
+ {t:"Segui la melodia",d:"Ignora cassa e rullante. Ascolta la voce o lo strumento principale e disegnalo con il corpo: note lunghe diventano onde, note brevi diventano hit."},
+ {t:"Segui il basso",d:"Ascolta solo la linea di basso: ogni nota è un hit o un passo. Nel funk il basso è spesso la parte più ballabile del brano."},
+ {t:"Balla per qualcuno",d:"Immagina una persona davanti a te e guardala negli occhi mentre balli. Se ti sembra strano, meglio: è proprio la sensazione che devi imparare a reggere."},
+ {t:"Una mossa che non fai mai",d:"Prova qualcosa fuori dal tuo repertorio, anche se viene male. Questo minuto serve a uscire dalle abitudini, non a fare bella figura."},
+ {t:"Solo mani e dita",d:"Corpo fermo, tutto il ballo nelle mani: finger wave, finger tutting, piccoli hit dei polsi. Tieni le mani vicino al viso perché si vedano."},
+ {t:"Rispondi ai suoni",d:"Ogni volta che senti un suono nuovo (un effetto, uno strumento, un cambio) rispondi con una mossa diversa. Allena l'ascolto attivo."},
+ {t:"Spalle e petto",d:"Il resto del corpo fermo. Lavori solo su spalle e petto: hit, rolls, onde, isolamenti avanti e indietro."}
+];
+const WARM = [
+ {t:"Mobilità",w:1.3,d:"Cerchi lenti di collo, spalle, polsi, anche e ginocchia, circa 4 per lato. Niente hit ancora: scaldi le articolazioni che poi contrarrai."},
+ {t:"Hit di braccia",w:1,d:"Braccia piegate davanti al petto. Contrai di colpo avambracci e tricipiti su ogni battito e rilascia subito. Click e hit devono coincidere."},
+ {t:"Hit di gambe",w:1,d:"Ginocchia leggermente piegate. Contrai i quadricipiti sul battito: il ginocchio fa un piccolo scatto indietro. Alterna destra e sinistra ogni 4 tempi."},
+ {t:"Hit di petto",w:1,d:"Contrai pettorali e addominali spingendo il petto avanti di pochi centimetri sul battito. Spalle basse e ferme."},
+ {t:"Tutto insieme",w:1,d:"Braccia, gambe e petto sullo stesso battito. Ogni hit identico al precedente: questa è la base di tutto il popping."}
+];
+const SONGS_DEFAULT = [
+ {t:"Zapp – More Bounce to the Ounce",tempo:"lento"},
+ {t:"Zapp – Computer Love",tempo:"lento"},
+ {t:"Parliament – Flash Light",tempo:"lento"},
+ {t:"Ginuwine – Pony",tempo:"lento"},
+ {t:"Dr. Dre – Still D.R.E.",tempo:"lento"},
+ {t:"Snoop Dogg – Drop It Like It's Hot",tempo:"lento"},
+ {t:"Kendrick Lamar – HUMBLE.",tempo:"lento"},
+ {t:"Missy Elliott – Get Ur Freak On",tempo:"lento"},
+ {t:"Gorillaz – Clint Eastwood",tempo:"lento"},
+ {t:"Jamiroquai – Virtual Insanity",tempo:"lento"},
+ {t:"Roger – I Heard It Through the Grapevine",tempo:"medio"},
+ {t:"Midnight Star – Freak-A-Zoid",tempo:"medio"},
+ {t:"Herbie Hancock – Rockit",tempo:"medio"},
+ {t:"Kraftwerk – Numbers",tempo:"medio"},
+ {t:"Cameo – Word Up!",tempo:"medio"},
+ {t:"The Gap Band – Burn Rubber on Me",tempo:"medio"},
+ {t:"Mr. Oizo – Flat Beat",tempo:"medio"},
+ {t:"Daft Punk – Da Funk",tempo:"medio"},
+ {t:"Daft Punk – Get Lucky",tempo:"medio"},
+ {t:"Daft Punk – Harder, Better, Faster, Stronger",tempo:"medio"},
+ {t:"Daft Punk – Around the World",tempo:"medio"},
+ {t:"Michael Jackson – Billie Jean",tempo:"medio"},
+ {t:"Michael Jackson – Smooth Criminal",tempo:"medio"},
+ {t:"Justin Timberlake – Rock Your Body",tempo:"medio"},
+ {t:"Mark Ronson, Bruno Mars – Uptown Funk",tempo:"medio"},
+ {t:"Bruno Mars – 24K Magic",tempo:"medio"},
+ {t:"Silk Sonic – Skate",tempo:"medio"},
+ {t:"Dua Lipa – Levitating",tempo:"medio"},
+ {t:"Doja Cat – Say So",tempo:"medio"},
+ {t:"Gorillaz – Feel Good Inc.",tempo:"medio"},
+ {t:"Chromeo – Night by Night",tempo:"veloce"},
+ {t:"Afrika Bambaataa – Planet Rock",tempo:"veloce"},
+ {t:"Egyptian Lover – Egypt, Egypt",tempo:"veloce"},
+ {t:"Jamiroquai – Cosmic Girl",tempo:"veloce"},
+ {t:"Jamiroquai – Canned Heat",tempo:"veloce"},
+ {t:"The Weeknd – Blinding Lights",tempo:"veloce"}
+];
+const EXAMPLE_SEEN = ["hit","fresno","walkout","twist","dime","tick","robot","awave","bwave","tut","rolls","music"];
+const EXAMPLE_LAST = ["fresno","awave"];
+
+/* ---------- storage ---------- */
+const KEY="popdaily-v1";
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.fund)return s}catch(e){}return null}
+let S = load() || {fund:Object.fromEntries(FUND.map(f=>[f.id,EXAMPLE_LAST.includes(f.id)?2:EXAMPLE_SEEN.includes(f.id)?1:0])),
+  example:true, dur:15, bpm:95, history:[], songs:SONGS_DEFAULT.map(s=>({...s,plays:0})), stats:{}};
+(function(){const have=new Set(S.songs.map(x=>x.t));SONGS_DEFAULT.forEach(x=>{if(!have.has(x.t))S.songs.push({...x,plays:0})});if(!S.bpm)S.bpm=95})();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const today=()=>new Date().toISOString().slice(0,10);
+const daysAgo=d=>d?Math.floor((Date.now()-new Date(d+"T12:00:00").getTime())/864e5):99;
+const fById=id=>FUND.find(f=>f.id===id);
+const fmt=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+
+/* ---------- session generation ---------- */
+let plan=null;
+function chooseFunds(n){
+  const pool=FUND.filter(f=>S.fund[f.id]>0 && f.fam!=="perf");
+  if(!pool.length) return [];
+  const scored=pool.map(f=>{const st=S.stats[f.id]||{};
+    let sc=(S.fund[f.id]===2?5:0)+(5-(st.r||3))+Math.min(daysAgo(st.d),7)*.5+Math.random()*2.5;
+    return {f,sc}}).sort((a,b)=>b.sc-a.sc);
+  const out=[scored[0].f];
+  for(const s of scored.slice(1)){if(out.length>=n)break; if(s.f.fam!==out[0].fam||scored.length<4) out.push(s.f)}
+  return out;
+}
+function chooseSong(not){
+  const pool=S.songs.filter(s=>s!==not);
+  const min=Math.min(...pool.map(s=>s.plays));
+  return pick(pool.filter(s=>s.plays===min));
+}
+function build(){
+  const d=S.dur, fs=chooseFunds(d>=15?2:1);
+  const steps=[];
+  const warmMin=d>=15?3:2, wt=WARM.reduce((a,x)=>a+x.w,0);
+  steps.push({k:"warm",name:"Riscaldamento",min:warmMin,metro:true,sub:"Mobilità articolare, poi hit di braccia, gambe, petto e tutto insieme, sempre a tempo",
+    segs:WARM.map(x=>({...x,sec:warmMin*60*x.w/wt}))});
+  fs.forEach((f,i)=>{
+    steps.push({k:"drill",name:f.n,fid:f.id,min:i===0?(d>=15?3:2.5):(d>=20?3:2),metro:true,sub:"Al metronomo, per la pulizia",prompts:[{t:"Pulizia",d:f.cue}]});
+    if(i===0||d>=20){const v=pick(VARIATIONS);
+      steps.push({k:"var",name:f.n+": "+v.t,fid:f.id,min:d>=15?2:1.5,metro:false,music:"song2",sub:v.d,prompts:[v]});}
+  });
+  const used=steps.reduce((a,s)=>a+s.min,0);
+  const free=Math.max(3,d-used-1);
+  let fp=[...PROMPTS].sort(()=>Math.random()-.5).slice(0,Math.ceil(free));
+  if(fs[0]) fp.splice(1,0,{t:"Usa il "+fs[0].n.toLowerCase(),d:"Inserisci il "+fs[0].n.toLowerCase()+" nel freestyle almeno 3 volte in questo minuto, collegandolo a quello che fai prima e dopo. È il passaggio dalla tecnica al ballo."});
+  if(S.fund.music>0) fp.splice(3,0,{t:"Accenti",d:"Hit solo sugli accenti forti che senti nella musica. Tra un accento e l'altro movimenti piccoli o fermo. Allena a scegliere quando colpire invece di colpire sempre."});
+  fp=fp.slice(0,Math.ceil(free));
+  steps.push({k:"free",name:"Freestyle",min:free,metro:false,music:"song",sub:"Un vincolo nuovo ogni minuto, segnalato da un bip",prompts:fp,every:60});
+  steps.push({k:"clip",name:"Clip finale",min:1,metro:false,music:"song",sub:"Registra 30 secondi e riguardali",
+    prompts:[{t:"Registra 30 secondi",d:"Telefono appoggiato, inquadra tutto il corpo e registra 30 secondi di freestyle. Riguardali subito e chiediti una cosa sola: cosa era pulito e cosa no?"}]});
+  const song=chooseSong();
+  plan={steps,funds:fs.map(f=>f.id),song,song2:chooseSong(song),date:today()};
+  renderPlan();
+}
+
+/* ---------- render: Oggi ---------- */
+function mins(m){return m%1?String(m).replace(".",","):m}
+function songBlock(key,label,note){const s=plan[key];
+  return `<div class="row" style="justify-content:space-between"><span class="label">${label}</span><button class="btn small ghost" data-swap="${key}">Cambia</button></div>
+   <div class="song"><span class="disc" aria-hidden="true"></span><div class="meta"><b>${esc(s.t)}</b>
+   <span class="muted">Ritmo ${s.tempo}</span> ${s.plays===0?'<span class="badge">Mai ballato</span>':""}</div></div>
+   <div class="links">${songLinks(s.t)}</div><p class="muted" style="font-size:13px">${note}</p>`}
+function renderPlan(){
+  document.querySelectorAll("[data-dur]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.dur===S.dur)));
+  $("bpmv").textContent=S.bpm;
+  if(!plan.funds.length){
+    $("plan").innerHTML=`<p class="muted">Segna almeno un fondamentale come visto a lezione nella scheda Fondamentali.</p>`;
+  } else {
+    $("plan").innerHTML=plan.steps.map(s=>`<div class="step"><span class="min">${mins(s.min)}′</span>
+      <div class="what"><h3>${esc(s.name)}</h3><small>${s.metro?"Metronomo · ":s.music==="song2"?"Brano di lavoro · ":s.music?"Brano freestyle · ":""}${esc(s.sub)}</small></div></div>`).join("");
+  }
+  const hasVar=plan.steps.some(s=>s.music==="song2");
+  $("songcard").innerHTML=(hasVar?songBlock("song2","Brano di lavoro","Per il blocco con vincolo: porti il fondamentale dal click alla musica vera.")+'<hr style="border:0;border-top:1px solid var(--line);margin:4px 0">':"")+
+    songBlock("song","Brano per il freestyle","Diverso dal brano di lavoro, così improvvisi su musica che non hai appena sentito.");
+  $("songcard").querySelectorAll("[data-swap]").forEach(b=>b.onclick=()=>{const k=b.dataset.swap,o=k==="song"?plan.song2:plan.song;
+    let n=plan[k],i=0;while((n===plan[k]||n===o)&&i<30){n=pick(S.songs);i++}plan[k]=n;renderPlan()});
+  $("bStart").disabled=!plan.funds.length;
+}
+function songLinks(t){const q=encodeURIComponent(t.replace("–"," "));
+  return `<a href="https://music.apple.com/it/search?term=${q}" target="_blank" rel="noopener">Apple Music</a><a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener">Spotify</a><a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">YouTube</a>`}
+
+/* ---------- audio ---------- */
+let ac=null;
+function audio(){try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){}return ac}
+function tone(f,dur=.05,vol=.25,when=0){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();
+  o.frequency.value=f;o.type="square";g.gain.setValueAtTime(vol,a.currentTime+when);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+when+dur);
+  o.connect(g).connect(a.destination);o.start(a.currentTime+when);o.stop(a.currentTime+when+dur+.02)}
+function chime(){tone(660,.12,.3);tone(990,.18,.3,.14)}
+
+/* ---------- player ---------- */
+let run=null, wake=null;
+function start(){
+  audio(); chime();
+  try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>wake=w).catch(()=>{})}catch(e){}
+  run={i:-1,paused:false,left:0,pIdx:0,pLeft:0,beat:0,last:performance.now(),beatAcc:0};
+  $("setup").hidden=true;$("songcard").hidden=true;$("bStart").hidden=true;$("player").hidden=false;$("rateCard").hidden=true;
+  next();
+  run.raf=requestAnimationFrame(tick);
+}
+function next(){
+  run.i++;
+  if(run.i>=plan.steps.length){finish();return}
+  const s=plan.steps[run.i];
+  run.left=s.min*60; run.total=run.left; run.pIdx=0; run.pLeft=s.every||1e9; run.seg=-1;
+  $("pstep").textContent=`Blocco ${run.i+1} di ${plan.steps.length}`;
+  $("pname").textContent=s.name;
+  $("pbpm").textContent=s.metro?S.bpm+" BPM":"Musica";
+  $("beats").hidden=!s.metro;
+  const nx=plan.steps[run.i+1];
+  if(s.music){const so=plan[s.music];$("pmusic").hidden=false;
+    $("pmusic").innerHTML=`<span class="label">Metti in play</span><b>${esc(so.t)}</b><div class="links">${songLinks(so.t)}</div>`}
+  else $("pmusic").hidden=true;
+  $("pnext").textContent=nx?`Dopo: ${nx.name}${nx.music&&(!s.music||plan[nx.music]!==plan[s.music])?" (prepara il brano)":""}`:"Ultimo blocco";
+  if(s.segs) showSeg(s,0); else showPrompt(s.prompts[0]);
+  if(run.i>0)chime();
+}
+function showPrompt(p){const e=$("pprompt");e.textContent=p.t;$("pdesc").textContent=p.d||"";e.classList.remove("hitflash");void e.offsetWidth;e.classList.add("hitflash")}
+function showSeg(s,i){run.seg=i;showPrompt(s.segs[i])}
+function tick(now){
+  if(!run)return;
+  const dt=(now-run.last)/1000; run.last=now;
+  if(!run.paused){
+    const s=plan.steps[run.i];
+    run.left-=dt;
+    if(s.metro){run.beatAcc+=dt;const per=60/S.bpm;
+      while(run.beatAcc>=per){run.beatAcc-=per;run.beat=(run.beat+1)%4;tone(run.beat===0?1500:1000,.03,.18);
+        document.querySelectorAll(".beat").forEach((b,i)=>b.classList.toggle("on",i===run.beat))}}
+    if(s.every){run.pLeft-=dt;if(run.pLeft<=0){run.pLeft=s.every;run.pIdx=(run.pIdx+1)%s.prompts.length;showPrompt(s.prompts[run.pIdx]);tone(880,.08,.2)}}
+    if(s.segs){let el=run.total-run.left,acc=0,i=0;for(;i<s.segs.length;i++){acc+=s.segs[i].sec;if(el<acc)break}
+      i=Math.min(i,s.segs.length-1);if(i!==run.seg){showSeg(s,i);tone(880,.08,.2)}}
+    $("ptimer").textContent=fmt(run.left);
+    $("pbar").style.width=(100*(1-run.left/run.total))+"%";
+    if(run.left<=0){next()}
+  }
+  if(run) run.raf=requestAnimationFrame(tick);
+}
+function stopRun(){if(run){cancelAnimationFrame(run.raf);run=null}try{wake&&wake.release()}catch(e){}wake=null}
+function finish(){stopRun();chime();$("player").hidden=true;renderRate()}
+function backToSetup(){$("setup").hidden=false;$("songcard").hidden=false;$("bStart").hidden=false}
+$("bPause").onclick=()=>{if(!run)return;run.paused=!run.paused;$("bPause").textContent=run.paused?"Riprendi":"Pausa";run.last=performance.now()};
+$("bNext").onclick=()=>{if(run)next()};
+$("bStop").onclick=()=>{if(run&&run.i>0){finish()}else{stopRun();$("player").hidden=true;backToSetup()}};
+$("bpmDown").onclick=()=>{S.bpm=Math.max(60,S.bpm-5);save();$("bpmv").textContent=S.bpm};
+$("bpmUp").onclick=()=>{S.bpm=Math.min(130,S.bpm+5);save();$("bpmv").textContent=S.bpm};
+
+/* ---------- rating ---------- */
+let R={};
+function dots(key,label){return `<div class="rate"><span>${esc(label)}</span><div class="dots" data-key="${key}">${[1,2,3,4,5].map(n=>`<button data-v="${n}" aria-pressed="false" aria-label="${n} su 5">${n}</button>`).join("")}</div></div>`}
+function renderRate(){
+  R={};
+  const c=$("rateCard");c.hidden=false;
+  c.innerHTML=`<h2>Com'è andata?</h2><p class="muted">1 = per niente pulito, 5 = pulito. Serve a decidere cosa ripassare domani.</p>
+   ${plan.funds.map(id=>dots(id,fById(id).n)).join("")}
+   ${dots("conf","Sicurezza nel freestyle")}
+   <label class="rate" for="rnote"><span>Nota per la prossima volta</span></label>
+   <textarea id="rnote" rows="2" placeholder="Es. nel fresno alzo le spalle"></textarea>
+   <button class="btn" id="saveSess">Salva sessione</button>`;
+  c.querySelectorAll(".dots").forEach(g=>g.onclick=e=>{const b=e.target.closest("button");if(!b)return;R[g.dataset.key]=+b.dataset.v;
+    g.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+  $("saveSess").onclick=()=>{
+    const d=today();
+    plan.funds.forEach(id=>{S.stats[id]={r:R[id]||S.stats[id]?.r||3,d}});
+    plan.song.plays++;if(plan.steps.some(x=>x.music==="song2"))plan.song2.plays++;
+    S.history.unshift({d,dur:S.dur,funds:plan.funds.map(id=>({id,r:R[id]||null})),conf:R.conf||null,note:$("rnote").value.trim(),song:plan.song.t});
+    save();c.hidden=true;backToSetup();build();renderStreak();renderDiary();
+  };
+  c.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---------- Fondamentali ---------- */
+function renderLib(){
+  $("exampleNote").hidden=!S.example;
+  $("lib").innerHTML=Object.entries(FAM).map(([k,lab])=>`<div class="fam"><span class="label">${lab}</span><div class="chips">
+    ${FUND.filter(f=>f.fam===k).map(f=>`<button class="chip" data-id="${f.id}" data-state="${S.fund[f.id]}">${esc(f.n)}</button>`).join("")}</div></div>`).join("");
+}
+$("lib").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const id=b.dataset.id;S.fund[id]=(S.fund[id]+1)%3;S.example=false;save();renderLib();build()};
+$("newLesson").onclick=()=>{for(const k in S.fund)if(S.fund[k]===2)S.fund[k]=1;S.example=false;save();renderLib();build()};
+
+/* ---------- Musica ---------- */
+let tempoF="tutti",addT="medio";
+function renderSongs(){
+  document.querySelectorAll("[data-tempo]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.tempo===tempoF)));
+  const list=S.songs.filter(s=>tempoF==="tutti"||s.tempo===tempoF).sort((a,b)=>a.plays-b.plays);
+  $("songlist").innerHTML=list.map(s=>`<div class="song"><div class="meta"><b>${esc(s.t)}</b><span class="muted">Ritmo ${s.tempo} · ballato ${s.plays} ${s.plays===1?"volta":"volte"}</span></div><div class="links">${songLinks(s.t)}</div></div>`).join("")||`<p class="muted">Nessun brano con questo ritmo.</p>`;
+}
+document.querySelectorAll("[data-tempo]").forEach(b=>b.onclick=()=>{tempoF=b.dataset.tempo;renderSongs()});
+document.querySelectorAll("[data-addt]").forEach(b=>b.onclick=()=>{addT=b.dataset.addt;document.querySelectorAll("[data-addt]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
+$("addSong").onclick=()=>{const t=$("addTitle").value.trim();if(!t)return;S.songs.push({t,tempo:addT,plays:0});$("addTitle").value="";save();renderSongs()};
+
+/* ---------- Diario ---------- */
+function streakCount(){const set=new Set(S.history.map(h=>h.d));let n=0,d=new Date();
+  if(!set.has(today())){d.setDate(d.getDate()-1)}
+  while(set.has(d.toISOString().slice(0,10))){n++;d.setDate(d.getDate()-1)}return n}
+function renderStreak(){$("streak").innerHTML=`<b>${streakCount()}</b>giorni di fila`}
+function renderDiary(){
+  const set=new Set(S.history.map(h=>h.d));let cells="";
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=d.toISOString().slice(0,10);
+    cells+=`<i class="${set.has(k)?"done":""}" title="${k}"></i>`}
+  $("cal").innerHTML=cells;
+  const pts=S.history.filter(h=>h.conf).slice(0,20).reverse();
+  if(pts.length<2){$("confChart").innerHTML=`<p class="muted">Il grafico compare dopo due sessioni valutate.</p>`}
+  else{const W=320,H=130,L=24,B=18,T=10,Rp=10,sx=i=>L+i*(W-L-Rp)/(pts.length-1),sy=v=>T+(5-v)*(H-T-B)/4;
+    const line=pts.map((p,i)=>`${sx(i)},${sy(p.conf)}`).join(" ");
+    const grid=[1,2,3,4,5].map(v=>`<line x1="${L}" x2="${W-Rp}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${sy(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--mono)">${v}</text>`).join("");
+    const last=pts[pts.length-1];
+    $("confChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sicurezza nel freestyle nelle ultime sessioni">${grid}
+      <polygon points="${sx(0)},${sy(1)} ${line} ${sx(pts.length-1)},${sy(1)}" fill="var(--accent)" opacity=".15"/>
+      <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="${sx(pts.length-1)}" cy="${sy(last.conf)}" r="4.5" fill="var(--accent)"/>
+      <text x="${L}" y="${H-3}" font-size="10" fill="var(--muted)">${pts[0].d.slice(5)}</text><text x="${W-Rp}" y="${H-3}" font-size="10" fill="var(--muted)" text-anchor="end">${last.d.slice(5)}</text></svg>`}
+  $("hist").innerHTML=S.history.slice(0,15).map(h=>`<div><b>${new Date(h.d+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})} · ${h.dur} min</b>
+    <span class="muted">${h.funds.map(f=>esc(fById(f.id)?.n||f.id)+(f.r?` ${f.r}/5`:"")).join(" · ")}${h.conf?` · freestyle ${h.conf}/5`:""}</span>
+    ${h.note?`<span>${esc(h.note)}</span>`:""}</div>`).join("")||`<p class="muted">Ancora nessuna sessione salvata. La prima la trovi nella scheda Oggi.</p>`;
+}
+
+/* ---------- tabs & init ---------- */
+const VIEWS={oggi:"v-oggi",fond:"v-fond",mus:"v-mus",diario:"v-diario"};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-current",String(x===t)));
+  for(const k in VIEWS){const v=$(VIEWS[k]);v.hidden=k!==t.dataset.tab;if(!v.hidden)v.style.display="flex"}
+  window.scrollTo(0,0);
+});
+document.querySelectorAll("[data-dur]").forEach(b=>b.onclick=()=>{S.dur=+b.dataset.dur;save();build()});
+$("reroll").onclick=build;
+$("bStart").onclick=start;
+build();renderLib();renderSongs();renderDiary();renderStreak();
+
+/* ---------- backup ---------- */
+$("bExport").onclick=async()=>{
+  const data=JSON.stringify({app:"popdaily",v:1,exported:new Date().toISOString(),state:S},null,1);
+  const name="pop-daily-backup-"+today()+".json";
+  const file=new File([data],name,{type:"application/json"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Backup Pop Daily"});$("bkMsg").textContent="Backup pronto: salvalo in File o iCloud Drive.";return}}catch(e){if(e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  $("bkMsg").textContent="Backup scaricato: "+name;
+};
+$("bImport").onclick=()=>$("fImport").click();
+$("fImport").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const j=JSON.parse(r.result);if(j.app!=="popdaily"||!j.state||!j.state.fund)throw 0;
+    S=j.state;save();build();renderLib();renderSongs();renderDiary();renderStreak();
+    $("bkMsg").textContent=`Backup importato: ${S.history.length} sessioni ripristinate.`}
+   catch(err){$("bkMsg").textContent="Questo file non è un backup di Pop Daily. Scegli il file .json esportato da qui."}
+   e.target.value=""};r.readAsText(f)};
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
+
